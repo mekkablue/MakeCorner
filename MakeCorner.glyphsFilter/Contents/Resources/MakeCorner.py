@@ -254,5 +254,4 @@ class GlyphsFilterMakeCorner ( NSObject, GlyphsFilterProtocol ):
 		Use self.logToConsole( "bla bla" ) for debugging.
 		"""
 		myLog = "Filter %s:\n%s" % ( self.title(), message )
-		print myLog
 		NSLog( myLog )
