@@ -26,6 +26,8 @@ Although I am not sure if it makes sense to anyone, you can trigger the filter f
     Property: Filter
     Value: GlyphsFilterMakeCorner;
 
+At the end of the parameter value, you can hang `exclude:` or `include:`, followed by a comma-separated list of glyph names. This will apply the filter only to the included glyphs, or the glyphs not excluded, respectively.
+
 ### System Requirements
 
 This plugin needs Glyphs 1.4.3 or later, running on OS X 10.7 or later. It has only been tested on OS X 10.9.2, though.
