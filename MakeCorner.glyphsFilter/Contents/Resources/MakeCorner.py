@@ -140,7 +140,13 @@ class GlyphsFilterMakeCorner ( NSObject, GlyphsFilterProtocol ):
 		If selectionCounts is True, then apply the code only to the selection.
 		"""
 		try:
-			selection = Layer.selection()
+			try:
+				# until v2.1:
+				selection = Layer.selection()
+			except:
+				# since v2.2:
+				selection = Layer.selection
+				
 			if selectionCounts == True:
 				if selection == (): # empty selection
 					selectionCounts = False
