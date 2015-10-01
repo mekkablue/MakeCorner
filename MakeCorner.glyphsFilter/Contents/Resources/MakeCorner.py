@@ -211,10 +211,10 @@ class GlyphsFilterMakeCorner ( NSObject, GlyphsFilterProtocol ):
 			for thisPath in ghostLayer.paths:
 				Layer.addPath_( thisPath )
 				
-			return True
+			return ( True, None )
 		except Exception as e:
 			self.logToConsole( "processLayer: %s" % str(e) )
-			return False
+			return ( False, None )
 	
 	def runFilterWithLayers_error_( self, Layers, Error ):
 		"""
