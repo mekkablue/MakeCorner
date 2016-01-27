@@ -12,15 +12,9 @@ if not path in sys.path:
 	sys.path.append( path )
 
 import GlyphsApp
+from GlyphsApp import GSMOVE, GSLINE, GSCURVE, GSOFFCURVE, GSSHARP, GSSMOOTH
 
 GlyphsFilterProtocol = objc.protocolNamed( "GlyphsFilter" )
-
-GSMOVE = 17
-GSLINE = 1
-GSCURVE = 35
-GSOFFCURVE = 65
-GSSHARP = 0
-GSSMOOTH = 4096
 
 class GlyphsFilterMakeCorner ( NSObject, GlyphsFilterProtocol ):
 

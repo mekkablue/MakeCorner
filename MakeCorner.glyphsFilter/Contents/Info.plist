@@ -19,15 +19,15 @@
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>7</string>
+	<string>8</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0.6</string>
+	<string>1.0.7</string>
 	<key>UpdateFeedURL</key>
 	<string>https://raw.githubusercontent.com/mekkablue/MakeCorner/master/MakeCorner.glyphsFilter/Contents/Info.plist</string>
 	<key>productPageURL</key>
 	<string>https://github.com/mekkablue/MakeCorner</string>
 	<key>productReleaseNotes</key>
-	<string>Fixed 'Need tuple of 2 arguments' error.</string>
+	<string>Compatibility update for v2.3.</string>
 	<key>LSHasLocalizedDisplayName</key>
 	<false/>
 	<key>NSAppleScriptEnabled</key>
