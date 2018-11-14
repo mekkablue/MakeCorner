@@ -19,7 +19,9 @@ class MakeCorner(FilterWithoutDialog):
 	def settings(self):
 		self.menuName = Glyphs.localize({
 			'en': u'Make Corner',
-			'de': u'Ecke herstellen'
+			'de': u'Ecke herstellen',
+			'es': u'Generar esquina',
+			'fr': u'Générer coin',
 		})
 		self.keyboardShortcut = None # With Cmd+Shift
 	
