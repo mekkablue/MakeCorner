@@ -1,4 +1,5 @@
 # encoding: utf-8
+from __future__ import division, print_function, unicode_literals
 
 ###########################################################################################################
 #
@@ -11,11 +12,13 @@
 #
 ###########################################################################################################
 
+import objc
 from GlyphsApp import *
 from GlyphsApp.plugins import *
 
 class MakeCorner(FilterWithoutDialog):
 	
+	@objc.python_method
 	def settings(self):
 		self.menuName = Glyphs.localize({
 			'en': u'Make Corner',
@@ -25,6 +28,7 @@ class MakeCorner(FilterWithoutDialog):
 		})
 		self.keyboardShortcut = None # With Cmd+Shift
 	
+	@objc.python_method
 	def intersection( self, pointA, pointB, pointC, pointD ):
 		"""
 		Returns an NSPoint of the intersection AB with CD.
@@ -63,6 +67,7 @@ class MakeCorner(FilterWithoutDialog):
 
 		return NSPoint( x, y )
 
+	@objc.python_method
 	def filter(self, Layer, inEditView, customParameters):
 		selection = Layer.selection
 		
@@ -123,12 +128,16 @@ class MakeCorner(FilterWithoutDialog):
 					ghostPath.nodes.append( thisNode.copy() )
 			
 			ghostPath.closed = True
-			ghostLayer.paths.append( ghostPath )
+			try:
+				ghostLayer.shapes.append( ghostPath )
+			except:
+				ghostLayer.paths.append( ghostPath )
 		
 		Layer.paths = ghostLayer.paths
 		if selectionCounts:
 			Layer.selection = None
 	
+	@objc.python_method
 	def __file__(self):
 		"""Please leave this method unchanged"""
 		return __file__
