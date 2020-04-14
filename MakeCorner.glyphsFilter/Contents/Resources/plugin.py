@@ -128,6 +128,7 @@ class MakeCorner(FilterWithoutDialog):
 					ghostPath.nodes.append( thisNode.copy() )
 			
 			ghostPath.closed = True
+			ghostPath.cleanUp()
 			try:
 				ghostLayer.shapes.append( ghostPath )
 			except:
@@ -139,9 +140,7 @@ class MakeCorner(FilterWithoutDialog):
 			Layer.paths = ghostLayer.paths
 		
 		if selectionCounts:
-			Layer.setSelection_(None)
-			# Hack, broken in wrapper:
-			# Layer.selection = None
+			Layer.clearSelection()
 	
 	@objc.python_method
 	def __file__(self):
