@@ -69,78 +69,84 @@ class MakeCorner(FilterWithoutDialog):
 
 	@objc.python_method
 	def filter(self, Layer, inEditView, customParameters):
-		selection = Layer.selection
+		try:
+			selection = Layer.selection
 		
-		selectionCounts = False
-		if inEditView and selection:
-			selectionCounts = True
+			selectionCounts = False
+			if inEditView and selection:
+				selectionCounts = True
 		
-		ghostLayer = GSLayer()
+			ghostLayer = GSLayer()
+			
 		
-		for thisPath in Layer.paths:
-			ghostPath = GSPath()
-			numOfNodes = len(thisPath.nodes)
-
-			for thisNodeIndex in range(numOfNodes):
-				thisNode = thisPath.nodes[ thisNodeIndex ]
-				prevNode = thisPath.nodes[ (thisNodeIndex - 1) % numOfNodes ]
+			for thisPath in Layer.paths:
+				ghostPath = GSPath()
+				numOfNodes = len(thisPath.nodes)
 				
-				if thisNode.type == GSOFFCURVE:
-					if prevNode.type != GSOFFCURVE:
-						nextNode = thisPath.nodes[ thisNodeIndex + 1 ]
-						bothNodesAreOffcurve = (thisNode.type == GSOFFCURVE) and (nextNode.type == GSOFFCURVE)
+				for thisNodeIndex in range(numOfNodes):
+					thisNode = thisPath.nodes[ thisNodeIndex ]
+					prevNode = thisPath.nodes[ (thisNodeIndex - 1) % numOfNodes ]
+				
+					if thisNode.type == OFFCURVE:
+						if prevNode.type != OFFCURVE:
+							nextNode = thisPath.nodes[ thisNodeIndex + 1 ]
+							bothNodesAreOffcurve = (thisNode.type == OFFCURVE) and (nextNode.type == OFFCURVE)
 					
-						if bothNodesAreOffcurve:
-							thisNodeCounts = thisNode in selection or not selectionCounts
-							nextNodeCounts = nextNode in selection or not selectionCounts
-							nodeAfterNextNode = thisPath.nodes[ (thisNodeIndex + 2) % numOfNodes ]
+							if bothNodesAreOffcurve:
+								thisNodeCounts = thisNode in selection or not selectionCounts
+								nextNodeCounts = nextNode in selection or not selectionCounts
+								nodeAfterNextNode = thisPath.nodes[ (thisNodeIndex + 2) % numOfNodes ]
 						
-							if thisNodeCounts or nextNodeCounts:
-								# make corner out of thisNode and nextNode
-								cornerPoint = self.intersection( prevNode.position, thisNode.position, nextNode.position, nodeAfterNextNode.position )
+								if thisNodeCounts or nextNodeCounts:
+									# make corner out of thisNode and nextNode
+									cornerPoint = self.intersection( prevNode.position, thisNode.position, nextNode.position, nodeAfterNextNode.position )
 
-								if cornerPoint:
-									cornerNode = GSNode()
-									cornerNode.position = cornerPoint
-									cornerNode.type = GSLINE
-									cornerNode.connection = GSSHARP
-									ghostPath.nodes.append( cornerNode )
+									if cornerPoint:
+										cornerNode = GSNode()
+										cornerNode.position = cornerPoint
+										cornerNode.type = LINE
+										cornerNode.connection = GSSHARP
+										ghostPath.nodes.append( cornerNode )
 									
-									linePoint = nodeAfterNextNode.copy()
-									linePoint.type = GSLINE
-									ghostPath.nodes.append( linePoint )
+										linePoint = nodeAfterNextNode.copy()
+										linePoint.type = LINE
+										ghostPath.nodes.append( linePoint )
+									else:
+										# add both offcurves as they are:
+										ghostPath.nodes.append( thisNode.copy() )
+										ghostPath.nodes.append( nextNode.copy() )
+										ghostPath.nodes.append( nodeAfterNextNode.copy() )
 								else:
 									# add both offcurves as they are:
 									ghostPath.nodes.append( thisNode.copy() )
 									ghostPath.nodes.append( nextNode.copy() )
 									ghostPath.nodes.append( nodeAfterNextNode.copy() )
 							else:
-								# add both offcurves as they are:
+								# do not make corner, keep the point as it is:
 								ghostPath.nodes.append( thisNode.copy() )
-								ghostPath.nodes.append( nextNode.copy() )
-								ghostPath.nodes.append( nodeAfterNextNode.copy() )
-						else:
-							# do not make corner, keep the point as it is:
-							ghostPath.nodes.append( thisNode.copy() )
 							
-				elif thisNode.type != GSCURVE:
-					# keep the on-curve point as it is:
-					ghostPath.nodes.append( thisNode.copy() )
+					elif thisNode.type != CURVE:
+						# keep the on-curve point as it is:
+						ghostPath.nodes.append( thisNode.copy() )
 			
-			ghostPath.closed = True
-			ghostPath.cleanUp()
+				ghostPath.closed = True
+				ghostPath.cleanUp()
+				try:
+					ghostLayer.shapes.append( ghostPath )
+				except:
+					ghostLayer.paths.append( ghostPath )
+		
 			try:
-				ghostLayer.shapes.append( ghostPath )
+				Layer.shapes = ghostLayer.shapes
 			except:
-				ghostLayer.paths.append( ghostPath )
+				Layer.paths = ghostLayer.paths
 		
-		try:
-			Layer.shapes = ghostLayer.shapes
-		except:
-			Layer.paths = ghostLayer.paths
-		
-		if selectionCounts:
-			Layer.clearSelection()
+			if selectionCounts:
+				Layer.clearSelection()
+		except Exception as e:
+			print(e)
+			import traceback
+			print(traceback.format_exc())
 	
 	@objc.python_method
 	def __file__(self):
