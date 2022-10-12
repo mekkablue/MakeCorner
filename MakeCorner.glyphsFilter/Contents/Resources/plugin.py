@@ -79,7 +79,13 @@ class MakeCorner(FilterWithoutDialog):
 
 			ghostLayer = GSLayer()
 
-			for thisPath in Layer.paths:
+			for thisPath in Layer.shapes:
+				if not isinstance(thisPath, GSPath):
+					try:
+						ghostLayer.shapes.append(thisPath)
+					except:
+						ghostLayer.paths.append(thisPath)
+					continue
 				ghostPath = GSPath()
 				numOfNodes = len(thisPath.nodes)
 
