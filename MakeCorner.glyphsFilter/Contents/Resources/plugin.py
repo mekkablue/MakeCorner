@@ -75,7 +75,15 @@ class MakeCorner(FilterWithoutDialog):
 	@objc.python_method
 	def filter(self, Layer, inEditView, customParameters):
 		try:
-			selectionMatters = bool(inEditView)
+			font = Layer.parent.parent
+			threshold = font.customParameters["Make Corner Threshold"]
+			if threshold:
+				try:
+					threshold = int(threshold)
+				except:
+					threshold = None
+					
+			selectionMatters = inEditView and Layer.selection
 			for shape in Layer.shapes:
 				if isinstance(shape, GSPath):
 					for i in range(len(shape.nodes)-1, -1, -1):
@@ -89,10 +97,16 @@ class MakeCorner(FilterWithoutDialog):
 						if C.type != OFFCURVE:
 							continue
 						D = C.nextNode
-						canDeleteA = A.prevNode.type != OFFCURVE
-						canDeleteD = D.nextNode.type != OFFCURVE
 						if D.type == OFFCURVE:
 							continue
+
+						# check if we exceed threshold
+						if threshold is None or abs(D.x-A.x) > threshold or abs(D.y-A.y) > threshold:
+							continue
+
+						# delete the remaining points if we are surrounded by line segments
+						canDeleteA = A.prevNode.type != OFFCURVE
+						canDeleteD = D.nextNode.type != OFFCURVE
 						selected = B.selected or C.selected
 						if not selected and selectionMatters:
 							continue
