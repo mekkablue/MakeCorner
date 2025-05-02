@@ -15,6 +15,7 @@ from __future__ import division, print_function, unicode_literals
 import objc
 from GlyphsApp import *
 from GlyphsApp.plugins import *
+from AppKit import NSPoint
 
 
 class MakeCorner(FilterWithoutDialog):
@@ -22,12 +23,14 @@ class MakeCorner(FilterWithoutDialog):
 	@objc.python_method
 	def settings(self):
 		self.menuName = Glyphs.localize({
-			'en': u'Make Corner',
-			'de': u'Ecke herstellen',
-			'es': u'Generar esquina',
-			'fr': u'Générer coin',
+			'en': 'Make Corner',
+			'de': 'Ecke wiederherstellen',
+			'es': 'Regenerar esquina',
+			'fr': 'Regénérer coin',
+			'pt': 'Regenerar canto',
 		})
 		self.keyboardShortcut = None  # With Cmd+Shift
+
 
 	@objc.python_method
 	def intersection(self, pointA, pointB, pointC, pointD):
@@ -68,86 +71,50 @@ class MakeCorner(FilterWithoutDialog):
 
 		return NSPoint(x, y)
 
-	@objc.python_method
-	def _processPath(self, path, selection):
-		ghostPath = GSPath()
-		numOfNodes = len(path.nodes)
-
-		for thisNodeIndex in range(numOfNodes):
-			thisNode = path.nodes[thisNodeIndex]
-			prevNode = path.nodes[(thisNodeIndex - 1) % numOfNodes]
-
-			if thisNode.type != OFFCURVE:
-				continue
-			if prevNode.type != OFFCURVE:
-				nextNode = path.nodes[thisNodeIndex + 1]
-				bothNodesAreOffcurve = (thisNode.type == OFFCURVE) and (nextNode.type == OFFCURVE)
-
-				if bothNodesAreOffcurve:
-					thisNodeCounts = thisNode in selection or selection is None
-					nextNodeCounts = nextNode in selection or selection is None
-					nodeAfterNextNode = path.nodes[(thisNodeIndex + 2) % numOfNodes]
-
-					if thisNodeCounts or nextNodeCounts:
-						# make corner out of thisNode and nextNode
-						cornerPoint = self.intersection(prevNode.position, thisNode.position, nextNode.position, nodeAfterNextNode.position)
-
-						if cornerPoint:
-							cornerNode = GSNode()
-							cornerNode.position = cornerPoint
-							cornerNode.type = LINE
-							cornerNode.connection = GSSHARP
-							ghostPath.nodes.append(cornerNode)
-
-							linePoint = nodeAfterNextNode.copy()
-							linePoint.type = LINE
-							ghostPath.nodes.append(linePoint)
-						else:
-							# add both offcurves as they are:
-							ghostPath.nodes.append(thisNode.copy())
-							ghostPath.nodes.append(nextNode.copy())
-							ghostPath.nodes.append(nodeAfterNextNode.copy())
-					else:
-						# add both offcurves as they are:
-						ghostPath.nodes.append(thisNode.copy())
-						ghostPath.nodes.append(nextNode.copy())
-						ghostPath.nodes.append(nodeAfterNextNode.copy())
-				else:
-					# do not make corner, keep the point as it is:
-					ghostPath.nodes.append(thisNode.copy())
-
-			elif thisNode.type != CURVE:
-				# keep the on-curve point as it is:
-				ghostPath.nodes.append(thisNode.copy())
-
-		ghostPath.closed = True
-		ghostPath.cleanUp()
-		return ghostPath
 
 	@objc.python_method
 	def filter(self, Layer, inEditView, customParameters):
 		try:
+			selectionMatters = bool(inEditView)
+			for shape in Layer.shapes:
+				if isinstance(shape, GSPath):
+					for i in range(len(shape.nodes)-1, -1, -1):
+						A = shape.nodes[i]
+						if A.type == OFFCURVE:
+							continue
+						B = A.nextNode
+						if B.type != OFFCURVE:
+							continue
+						C = B.nextNode
+						if C.type != OFFCURVE:
+							continue
+						D = C.nextNode
+						canDeleteA = A.prevNode.type != OFFCURVE
+						canDeleteD = D.nextNode.type != OFFCURVE
+						if D.type == OFFCURVE:
+							continue
+						selected = B.selected or C.selected
+						if not selected and selectionMatters:
+							continue
 
-			selection = Layer.selection if inEditView else None
+						# create corner node
+						cornerPosition = self.intersection(A, B, C, D)
+						if not cornerPosition:
+							continue
+						corner = GSNode(cornerPosition, type=LINE)
 
-			ghostLayer = GSLayer()
-
-			for path in Layer.shapes:
-				if isinstance(path, GSPath):
-					path = self._processPath(path, selection)
-
-				try:
-					ghostLayer.shapes.append(path)
-				except:
-					ghostLayer.paths.append(path)
-
-			try:
-				Layer.shapes = ghostLayer.shapes
-			except:
-				Layer.paths = ghostLayer.paths
-
-			if Layer.selection:
-				Layer.clearSelection()
+						# rebuild the corner
+						if canDeleteD:
+							del shape.nodes[D.index]
+						else:
+							D.type = LINE
+						del shape.nodes[C.index]
+						del shape.nodes[B.index]
+						shape.nodes.insert(A.index+1, corner)
+						if canDeleteA:
+							del shape.nodes[A.index]
+		
+			Layer.clearSelection()
 
 		except Exception as e:
 			print(e)
