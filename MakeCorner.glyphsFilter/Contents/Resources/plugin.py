@@ -73,76 +73,81 @@ class MakeCorner(FilterWithoutDialog):
 
 
 	@objc.python_method
-	def filter(self, Layer, inEditView, customParameters):
+	def filter(self, layer, inEditView, customParameters):
 		try:
-			font = Layer.parent.parent
-			threshold = font.customParameters["Make Corner Threshold"]
-			if threshold:
-				try:
-					threshold = int(threshold)
-				except:
-					threshold = None
-					
-			selectionMatters = inEditView and Layer.selection
+			# determine the size threshold
+			threshold = None
+			glyph = layer.parent
+			if glyph:
+				font = glyph.parent
+				if font:
+					threshold = font.customParameterForKey_("Make Corner Threshold")
+					if threshold is not None and threshold.active:
+					try:
+						threshold = int(threshold.value)
+					except:
+						pass
+
+			selectionMatters = inEditView and layer.selection
 			changesMade = False
-			
-			for shape in Layer.shapes:
+			for shape in layer.shapes:
 
 				# check on paths, ignor components
-				if isinstance(shape, GSPath):
+				if not isinstance(shape, GSPath):
+					continue
 					
-					# only if they have enough points
-					if len(shape.nodes) < 5:
+				# only if they have enough points
+				if len(shape.nodes) < 5:
+					continue
+				
+				# step through all nodes
+				for i in range(len(shape.nodes)-1, -1, -1):
+					
+					# check on the current node quadruplet
+					A = shape.nodes[i]
+					if A.type == OFFCURVE:
 						continue
-					
-					# step through all nodes
-					for i in range(len(shape.nodes)-1, -1, -1):
-						
-						# check on the current node quadruplet
-						A = shape.nodes[i]
-						if A.type == OFFCURVE:
-							continue
-						B = A.nextNode
-						if B.type != OFFCURVE:
-							continue
-						C = B.nextNode
-						if C.type != OFFCURVE:
-							continue
-						D = C.nextNode
-						if D.type == OFFCURVE:
-							continue
+					B = A.nextNode
+					if B.type != OFFCURVE:
+						continue
+					C = B.nextNode
+					if C.type != OFFCURVE:
+						continue
+					D = C.nextNode
+					if D.type == OFFCURVE:
+						continue
 
-						# check if we exceed threshold
-						if threshold is None or abs(D.x-A.x) > threshold or abs(D.y-A.y) > threshold:
-							continue
+					# check if we exceed threshold
+					if threshold is None or abs(D.x-A.x) > threshold or abs(D.y-A.y) > threshold:
+						continue
 
-						# delete the remaining points if we are surrounded by line segments
-						canDeleteA = A.prevNode.type != OFFCURVE
-						canDeleteD = D.nextNode.type != OFFCURVE
-						selected = B.selected or C.selected
-						if not selected and selectionMatters:
-							continue
+					# delete the remaining points if we are surrounded by line segments
+					canDeleteA = A.prevNode.type != OFFCURVE
+					canDeleteD = D.nextNode.type != OFFCURVE
+					selected = B.selected or C.selected
+					if not selected and selectionMatters:
+						continue
 
-						# create corner node
-						cornerPosition = self.intersection(A, B, C, D)
-						if not cornerPosition:
-							continue
-						corner = GSNode(cornerPosition, type=LINE)
-						changesMade = True
+					# create corner node
+					cornerPosition = self.intersection(A, B, C, D)
+					if not cornerPosition:
+						continue
+					corner = GSNode(cornerPosition, type=LINE)
+					changesMade = True
 
-						# rebuild the corner
-						if canDeleteD:
-							del shape.nodes[D.index]
-						else:
-							D.type = LINE
-						del shape.nodes[C.index]
-						del shape.nodes[B.index]
-						shape.nodes.insert(A.index+1, corner)
-						if canDeleteA:
-							del shape.nodes[A.index]
+					# rebuild the corner
+					if canDeleteD:
+						del shape.nodes[D.index]
+					else:
+						D.type = LINE
+					del shape.nodes[C.index]
+					del shape.nodes[B.index]
+					shape.nodes.insert(A.index+1, corner)
+					if canDeleteA:
+						del shape.nodes[A.index]
 
 			if changesMade:
-				Layer.clearSelection()
+				layer.clearSelection()
 
 		except Exception as e:
 			print(e)
