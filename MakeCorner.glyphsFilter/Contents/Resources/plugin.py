@@ -84,9 +84,21 @@ class MakeCorner(FilterWithoutDialog):
 					threshold = None
 					
 			selectionMatters = inEditView and Layer.selection
+			changesMade = False
+			
 			for shape in Layer.shapes:
+
+				# check on paths, ignor components
 				if isinstance(shape, GSPath):
+					
+					# only if they have enough points
+					if len(shape.nodes) < 5:
+						continue
+					
+					# step through all nodes
 					for i in range(len(shape.nodes)-1, -1, -1):
+						
+						# check on the current node quadruplet
 						A = shape.nodes[i]
 						if A.type == OFFCURVE:
 							continue
@@ -116,6 +128,7 @@ class MakeCorner(FilterWithoutDialog):
 						if not cornerPosition:
 							continue
 						corner = GSNode(cornerPosition, type=LINE)
+						changesMade = True
 
 						# rebuild the corner
 						if canDeleteD:
@@ -127,8 +140,9 @@ class MakeCorner(FilterWithoutDialog):
 						shape.nodes.insert(A.index+1, corner)
 						if canDeleteA:
 							del shape.nodes[A.index]
-		
-			Layer.clearSelection()
+
+			if changesMade:
+				Layer.clearSelection()
 
 		except Exception as e:
 			print(e)
