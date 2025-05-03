@@ -17,7 +17,9 @@ After installation, it will add the menu item *Filter > Make Corner* (de: *Ecke 
 1. Select any number of off-curve nodes in the active glyphs.
 2. Use *Filter > Make Corner* to turn the respective curve segments into corners. If you run it with multiple glyphs selected, it will turn all curved segments into corners.
 
-### Custom Parameter
+### Custom Parameters
+
+In *Font Info > Font > Custom Parameters,* you can add a custom parameter called `Make Corner Threshold` with an integer number as value. Make Corner will use that value to exclusively convert curve segments smaller than the threshold value (in font units).
 
 Although I am not sure if it makes sense to anyone, you can trigger the filter functionality via a custom parameter:
 
