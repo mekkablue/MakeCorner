@@ -83,10 +83,10 @@ class MakeCorner(FilterWithoutDialog):
 				if font:
 					threshold = font.customParameterForKey_("Make Corner Threshold")
 					if threshold is not None and threshold.active:
-					try:
-						threshold = int(threshold.value)
-					except:
-						pass
+						try:
+							threshold = int(threshold.value)
+						except:
+							pass
 
 			selectionMatters = inEditView and layer.selection
 			changesMade = False
@@ -118,8 +118,9 @@ class MakeCorner(FilterWithoutDialog):
 						continue
 
 					# check if we exceed threshold
-					if threshold is None or abs(D.x-A.x) > threshold or abs(D.y-A.y) > threshold:
-						continue
+					if isinstance(threshold, int):
+						if abs(D.x-A.x) >= threshold or abs(D.y-A.y) >= threshold:
+							continue
 
 					# delete the remaining points if we are surrounded by line segments
 					canDeleteA = A.prevNode.type != OFFCURVE
