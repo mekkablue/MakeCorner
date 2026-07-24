@@ -13,8 +13,8 @@ from __future__ import division, print_function, unicode_literals
 ###########################################################################################################
 
 import objc
-from GlyphsApp import *
-from GlyphsApp.plugins import *
+from GlyphsApp import Glyphs, GSPath, GSNode, OFFCURVE, LINE
+from GlyphsApp.plugins import FilterWithoutDialog
 from AppKit import NSPoint
 
 
