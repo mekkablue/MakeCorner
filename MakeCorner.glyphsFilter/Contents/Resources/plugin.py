@@ -82,13 +82,16 @@ class MakeCorner(FilterWithoutDialog):
 				font = glyph.parent
 				if font:
 					threshold = font.customParameterForKey_("Make Corner Threshold")
-					if threshold is not None and threshold.active:
+					# this is a GSCustomParameter in some API versions, its plain value in others:
+					if threshold is not None and getattr(threshold, "active", True):
 						try:
-							threshold = int(threshold.value)
+							threshold = int(getattr(threshold, "value", threshold))
 						except:
 							pass
 
-			selectionMatters = inEditView and layer.selection
+			# take a snapshot: layer.selection is live, and deleting nodes below
+			# empties it, which would silently switch the selection check off
+			selectionMatters = bool(inEditView and layer.selection)
 			changesMade = False
 			for shape in layer.shapes:
 
@@ -100,11 +103,13 @@ class MakeCorner(FilterWithoutDialog):
 				if len(shape.nodes) < 5:
 					continue
 				
-				# step through all nodes
-				for i in range(len(shape.nodes)-1, -1, -1):
-					
+				# collect the quadruplets that shall become corners.
+				# Iterate over a snapshot, because rebuilding a corner (below) deletes
+				# and inserts nodes, which invalidates every node index taken before.
+				segments = []
+				for A in tuple(shape.nodes):
+
 					# check on the current node quadruplet
-					A = shape.nodes[i]
 					if A.type == OFFCURVE:
 						continue
 					B = A.nextNode
@@ -122,19 +127,29 @@ class MakeCorner(FilterWithoutDialog):
 						if abs(D.x-A.x) >= threshold or abs(D.y-A.y) >= threshold:
 							continue
 
-					# delete the remaining points if we are surrounded by line segments
-					canDeleteA = A.prevNode.type != OFFCURVE
-					canDeleteD = D.nextNode.type != OFFCURVE
+					# only rebuild what the user selected, if there is a selection
 					selected = B.selected or C.selected
 					if not selected and selectionMatters:
 						continue
 
+					segments.append((A, B, C, D))
+
+				# rebuild the collected quadruplets into corners.
+				# A and D are shared with the neighboring segments, but they are only
+				# ever deleted when the far side is a line segment, i.e. when the
+				# neighbor is not a quadruplet itself. So all four nodes stay valid.
+				for A, B, C, D in segments:
+
 					# create corner node
 					cornerPosition = self.intersection(A, B, C, D)
-					if not cornerPosition:
+					if cornerPosition is False:
 						continue
 					corner = GSNode(cornerPosition, type=LINE)
 					changesMade = True
+
+					# delete the remaining points if we are surrounded by line segments
+					canDeleteA = A.prevNode.type != OFFCURVE
+					canDeleteD = D.nextNode.type != OFFCURVE
 
 					# rebuild the corner
 					if canDeleteD:
